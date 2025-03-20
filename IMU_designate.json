@@ -1,0 +1,35 @@
+{
+    "imu_configs": {
+        "AL": {
+            "address": "D4:22:CD:00:2E:F5",
+            "location": "left_arm",
+            "description": "Left Arm IMU Sensor"
+        },
+        "AR": {
+            "address": "D4:22:CD:00:2E:F7",
+            "location": "right_arm",
+            "description": "Right Arm IMU Sensor"
+        },
+        "LL": {
+            "address": "D4:22:CD:00:2E:F8",
+            "location": "left_leg",
+            "description": "Left Leg IMU Sensor"
+        },
+        "LR": {
+            "address": "D4:22:CD:00:2E:F9",
+            "location": "right_leg",
+            "description": "Right Leg IMU Sensor"
+        },
+        "H": {
+            "address": "D4:22:CD:00:2E:FA",
+            "location": "head",
+            "description": "Head IMU Sensor"
+        }
+    },
+    "settings": {
+        "measurement_uuid": "15172004-4947-11e9-8646-d663bd873d93",
+        "control_uuid": "15172001-4947-11e9-8646-d663bd873d93",
+        "default_recording_window": 60,
+        "sampling_rate": 60
+    }
+}
