@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hospital Test Bed Study</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .recording {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <header class="bg-white shadow rounded-lg p-4 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Hospital Test Bed Study Recording System</h1>
+            <div id="connectionStatus" class="text-gray-600 mt-2">Checking connection...</div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Configuration Panel -->
+            <div id="configPanel" class="bg-white shadow rounded-lg p-4">
+                <h2 class="text-xl font-semibold mb-4">Session Configuration</h2>
+                <form id="configForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Session Name</label>
+                        <input type="text" id="sessionName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Researcher ID</label>
+                        <input type="text" id="researcherId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Participant ID</label>
+                        <input type="text" id="participantId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
+                    </div>
+                    
+                    <!-- In the configuration panel section -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">Available IMUs</label>
+						<div id="imuList" class="space-y-2 border rounded-md p-3">
+							<!-- IMUs will be populated here -->
+						</div>
+					</div>
+                    <div>
+				<label class="block text-sm font-medium text-gray-700 mb-2">Camera Streams</label>
+				<div class="space-y-2 border rounded-md p-3">
+					<div class="flex items-center space-x-2 p-2 hover:bg-gray-50">
+						<input type="checkbox" id="stream_rgb" name="camera_streams" value="rgb" 
+							   class="rounded border-gray-300">
+						<label for="stream_rgb" class="text-sm text-gray-700">
+							RGB Stream
+						</label>
+					</div>
+					<div class="flex items-center space-x-2 p-2 hover:bg-gray-50">
+						<input type="checkbox" id="stream_depth" name="camera_streams" value="depth" 
+							   class="rounded border-gray-300">
+						<label for="stream_depth" class="text-sm text-gray-700">
+							Depth Stream
+						</label>
+					</div>
+				</div>
+			</div>
+            
+                    
+                    
+                    
+                    <button type="submit" class="w-full bg-blue-500 text-white rounded-md py-2 px-4 hover:bg-blue-600 transition-colors">
+                        Create Session
+                    </button>
+                </form>
+            </div>
+
+			
+
+            <!-- Recording Panel -->
+            <div id="recordingPanel" class="bg-white shadow rounded-lg p-4 hidden">
+                <h2 class="text-xl font-semibold mb-4">Recording Control</h2>
+                <div class="space-y-4">
+                    <!-- Status Display -->
+                    <div class="p-3 border rounded-md bg-gray-50">
+                        <div id="recordingStatus" class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                            <span class="text-gray-700">Ready to record</span>
+                        </div>
+                        <div id="recordingTime" class="text-lg font-mono mt-2">00:00</div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="flex space-x-3">
+                        <button id="startRecording" class="flex-1 bg-green-500 text-white rounded-md py-2 px-4 hover:bg-green-600 transition-colors">
+                            Start Recording
+                        </button>
+                        <button id="stopRecording" class="flex-1 bg-red-500 text-white rounded-md py-2 px-4 hover:bg-red-600 transition-colors" disabled>
+                            Stop Recording
+                        </button>
+                    </div>
+                    <button id="newSession" class="w-full mt-4 bg-blue-500 text-white rounded-md py-2 px-4 hover:bg-blue-600 transition-colors hidden">
+                        Start New Session
+                    </button>
+
+                    <!-- IMU Status List -->
+                    <div>
+                        <h3 class="font-medium mb-2">IMU Status</h3>
+                        <div id="imuStatus" class="space-y-2">
+                            <!-- IMU status items will be populated here -->
+                        </div>
+                    </div>
+					<div>
+						<h3 class="font-medium mb-2">Camera Status</h3>
+						<div id="cameraStatus" class="space-y-2">
+							<div class="p-3 border rounded-md bg-gray-50">
+								<!-- RGB Status -->
+								<div id="rgbStatus" class="flex items-center justify-between mb-2">
+									<div class="flex items-center space-x-2">
+										<span class="w-3 h-3 rounded-full bg-gray-400" id="rgbIndicator"></span>
+										<span class="text-sm font-medium">RGB Stream</span>
+									</div>
+									<span class="text-sm text-gray-600" id="rgbFrameCount"></span>
+								</div>
+								
+								<!-- Depth Status -->
+								<div id="depthStatus" class="flex items-center justify-between">
+									<div class="flex items-center space-x-2">
+										<span class="w-3 h-3 rounded-full bg-gray-400" id="depthIndicator"></span>
+										<span class="text-sm font-medium">Depth Stream</span>
+									</div>
+									<span class="text-sm text-gray-600" id="depthFrameCount"></span>
+								</div>
+							</div>
+						</div>
+					</div>
+        
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isRecording = false;
+        let recordingInterval = null;
+        let recordingStartTime = null;
+        let sessionPath = null;
+        let selectedImus = [];  // Store selected IMUs globally
+
+        // Initialize websocket connection
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://${window.location.host}/api/ws`);
+            
+            ws.onopen = () => {
+                updateConnectionStatus('Connected', 'green');
+            };
+
+            ws.onclose = () => {
+                updateConnectionStatus('Disconnected - Reconnecting...', 'red');
+                setTimeout(connectWebSocket, 1000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+
+            ws.onerror = () => {
+                updateConnectionStatus('Connection Error', 'red');
+            };
+        }
+
+        // Update connection status display
+        function updateConnectionStatus(message, color) {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.textContent = message;
+            statusElement.className = `text-${color}-600 mt-2`;
+        }
+
+        // Handle incoming websocket messages
+        function handleWebSocketMessage(data) {
+            if (data.type === 'recording_status') {
+                updateRecordingStatus(data);
+            } else if (data.imu_id) {
+                updateIMUStatus(data);
+            }
+        }
+
+        // Update recording status display
+        function updateRecordingStatus(data) {
+            const statusElement = document.getElementById('recordingStatus');
+            const startButton = document.getElementById('startRecording');
+            const stopButton = document.getElementById('stopRecording');
+
+            if (data.success && data.message === "Recording started") {
+                isRecording = true;
+                statusElement.innerHTML = `
+                    <span class="w-3 h-3 rounded-full bg-green-500 recording"></span>
+                    <span class="text-green-700">Recording</span>
+                `;
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                recordingStartTime = Date.now();
+                startRecordingTimer();
+            } else {
+                isRecording = false;
+                if (data.message === "Recording stopped") {
+                    statusElement.innerHTML = `
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <span class="text-gray-700">Recording Stopped</span>
+                    `;
+                } else {
+                    statusElement.innerHTML = `
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span class="text-red-700">Error: ${data.message}</span>
+                    `;
+                }
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                stopRecordingTimer();
+            }
+        }
+
+        // Update individual IMU status
+        function updateIMUStatus(data) {
+            const statusContainer = document.getElementById('imuStatus');
+            let statusElement = document.getElementById(`imu_status_${data.imu_id}`);
+
+            if (!statusElement) {
+                statusElement = document.createElement('div');
+                statusElement.id = `imu_status_${data.imu_id}`;
+                statusElement.className = 'p-2 border rounded-md';
+                statusContainer.appendChild(statusElement);
+            }
+
+            const statusColor = getStatusColor(data.status);
+            statusElement.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full ${statusColor}"></span>
+                        <span class="font-medium">${data.imu_id}</span>
+                    </div>
+                    <span class="text-sm text-gray-600">
+                        ${data.samples ? `Samples: ${data.samples}` : data.message}
+                    </span>
+                </div>
+            `;
+        }
+
+        // Get status indicator color
+        function getStatusColor(status) {
+            switch (status) {
+                case 'scanning': return 'bg-yellow-500';
+                case 'connected': return 'bg-green-500';
+                case 'recording': return 'bg-blue-500';
+                case 'error': return 'bg-red-500';
+                default: return 'bg-gray-500';
+            }
+        }
+
+        // Recording timer functions
+        function startRecordingTimer() {
+            recordingInterval = setInterval(updateRecordingTime, 1000);
+        }
+
+        function stopRecordingTimer() {
+            if (recordingInterval) {
+                clearInterval(recordingInterval);
+                recordingInterval = null;
+            }
+            recordingStartTime = null;  // Reset the start time
+            document.getElementById('recordingTime').textContent = '00:00';
+        }
+
+        function updateRecordingTime() {
+            if (!recordingStartTime || !isRecording) {
+                stopRecordingTimer();
+                return;
+            }
+            
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('recordingTime').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+		function updateCameraStatus(data) {
+			if (data.type === "camera_status") {
+				const rgbIndicator = document.getElementById('rgbIndicator');
+				const depthIndicator = document.getElementById('depthIndicator');
+				const rgbFrameCount = document.getElementById('rgbFrameCount');
+				const depthFrameCount = document.getElementById('depthFrameCount');
+
+				// Update RGB status
+				if (data.streams.rgb) {
+					rgbIndicator.className = "w-3 h-3 rounded-full bg-green-500 animate-pulse";
+					rgbFrameCount.textContent = `Recording: ${data.frame_count} frames`;
+				} else {
+					rgbIndicator.className = "w-3 h-3 rounded-full bg-gray-400";
+					rgbFrameCount.textContent = "Not recording";
+				}
+
+				// Update Depth status
+				if (data.streams.depth) {
+					depthIndicator.className = "w-3 h-3 rounded-full bg-blue-500 animate-pulse";
+					depthFrameCount.textContent = `Recording: ${data.frame_count} frames`;
+				} else {
+					depthIndicator.className = "w-3 h-3 rounded-full bg-gray-400";
+					depthFrameCount.textContent = "Not recording";
+				}
+
+				// Handle errors if any
+				if (data.error) {
+					rgbIndicator.className = "w-3 h-3 rounded-full bg-red-500";
+					depthIndicator.className = "w-3 h-3 rounded-full bg-red-500";
+					rgbFrameCount.textContent = "Error";
+					depthFrameCount.textContent = "Error";
+				}
+			}
+		}
+
+		// Make sure this status update is connected to the WebSocket handler
+		function handleWebSocketMessage(data) {
+			if (data.type === 'recording_status') {
+				updateRecordingStatus(data);
+			} else if (data.type === 'camera_status') {
+				updateCameraStatus(data);
+			} else if (data.imu_id) {
+				updateIMUStatus(data);
+			}
+		}
+
+
+
+
+
+
+
+		// Updated IMU scanning code
+
+		async function scanIMUs() {
+			const imuList = document.getElementById('imuList');
+			imuList.innerHTML = '<div class="text-gray-600">Scanning for IMUs...</div>';
+			
+			try {
+				const response = await fetch('/api/scan-imus');
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
+				const imuStatus = await response.json();
+				
+				// Clear existing IMUs
+				imuList.innerHTML = '';
+				
+				// Add IMUs to the list
+				Object.entries(imuStatus).forEach(([id, info]) => {
+					const div = document.createElement('div');
+					div.className = 'flex items-center space-x-2 p-2 hover:bg-gray-50';
+					div.innerHTML = `
+						<input type="checkbox" id="imu_${id}" name="imus" value="${id}" 
+							   class="rounded border-gray-300" ${info.active ? '' : 'disabled'}>
+						<label for="imu_${id}" class="flex-1 flex items-center space-x-2">
+							<span class="w-2 h-2 rounded-full ${info.active ? 'bg-green-500' : 'bg-gray-300'}"></span>
+							<span class="text-sm ${info.active ? 'text-gray-700' : 'text-gray-400'}">
+								${id} - ${info.description} (${info.location})
+								${info.active ? `<span class="text-xs text-gray-500"> Signal: ${info.rssi}dBm</span>` : ''}
+							</span>
+						</label>
+					`;
+					imuList.appendChild(div);
+				});
+				
+				// Add rescan button in a container
+				const buttonContainer = document.createElement('div');
+				buttonContainer.className = 'mt-4 flex justify-end';
+				buttonContainer.innerHTML = `
+					<button type="button" onclick="scanIMUs()" 
+							class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm 
+								   leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 
+								   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+						</svg>
+						Rescan IMUs
+					</button>
+				`;
+				imuList.appendChild(buttonContainer);
+				
+			} catch (error) {
+				console.error('Error scanning IMUs:', error);
+				imuList.innerHTML = `
+					<div class="text-red-600 p-2">
+						Error scanning IMUs: ${error.message}
+						<button onclick="scanIMUs()" class="ml-2 text-sm underline">
+							Try Again
+						</button>
+					</div>
+				`;
+			}
+		}
+
+		// Initial load of IMU configs - scan once
+		async function loadIMUConfigs() {
+			await scanIMUs();
+		}
+
+		// Remove all interval-based scanning
+		document.addEventListener('DOMContentLoaded', () => {
+			// Only perform initial scan
+			loadIMUConfigs();
+		});
+
+
+		// Stop scanning when recording starts
+		document.getElementById('startRecording').addEventListener('click', () => {
+			if (scanInterval) {
+				clearInterval(scanInterval);
+			}
+		});
+
+		// Resume scanning when new session is started
+		document.getElementById('newSession').addEventListener('click', () => {
+			scanInterval = setInterval(scanIMUs, 10000);
+		});
+
+
+
+
+        // Form submission handler
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            selectedImus = Array.from(document.querySelectorAll('input[name="imus"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            if (selectedImus.length === 0) {
+                alert('Please select at least one IMU');
+                return;
+            }
+
+            const sessionConfig = {
+                session_name: document.getElementById('sessionName').value,
+                researcher_id: document.getElementById('researcherId').value,
+                participant_id: document.getElementById('participantId').value,
+                selected_imus: selectedImus,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sessionConfig)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    sessionPath = data.session_path;
+                    document.getElementById('configPanel').classList.add('hidden');
+                    document.getElementById('recordingPanel').classList.remove('hidden');
+                    connectWebSocket();
+                } else {
+                    throw new Error(data.detail || 'Error creating session');
+                }
+            } catch (error) {
+                alert('Error creating session: ' + error.message);
+            }
+        });
+
+
+        // Recording control button handlers
+		document.getElementById('startRecording').addEventListener('click', () => {
+			if (ws && ws.readyState === WebSocket.OPEN) {
+				// Get camera stream selections
+				const rgbEnabled = document.getElementById('stream_rgb').checked;
+				const depthEnabled = document.getElementById('stream_depth').checked;
+				
+				console.log("Camera settings:", { rgb: rgbEnabled, depth: depthEnabled });  // Debug log
+
+				ws.send(JSON.stringify({
+					action: 'start_recording',
+					session_path: sessionPath,
+					selected_imus: selectedImus,
+					camera_streams: {
+						rgb: rgbEnabled,
+						depth: depthEnabled
+					}
+				}));
+			}
+		});
+
+        document.getElementById('stopRecording').addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    action: 'stop_recording'
+                }));
+                isRecording = false;
+                recordingStartTime = null;  // Reset the start time
+                stopRecordingTimer();       // Stop and reset the timer
+                // Show the New Session button after stopping
+                document.getElementById('newSession').classList.remove('hidden');
+            }
+        });
+
+        // New Session button handler
+        document.getElementById('newSession').addEventListener('click', async () => {
+            // Stop any ongoing recording and timer
+            isRecording = false;
+            if (recordingInterval) {
+                clearInterval(recordingInterval);
+                recordingInterval = null;
+            }
+            recordingStartTime = null;
+            
+            // Reset form
+            document.getElementById('configForm').reset();
+            
+            // Hide recording panel and show config panel first
+            document.getElementById('recordingPanel').classList.add('hidden');
+            document.getElementById('configPanel').classList.remove('hidden');
+            
+            // Clear and reload IMU list
+            const imuList = document.getElementById('imuList');
+            if (imuList) {
+                imuList.innerHTML = '<div class="text-gray-600">Loading IMUs...</div>';
+            }
+            
+            // Wait for IMU configs to load
+            await loadIMUConfigs();
+            
+            // Hide New Session button
+            document.getElementById('newSession').classList.add('hidden');
+            
+            // Reset recording status
+            const statusElement = document.getElementById('recordingStatus');
+            statusElement.innerHTML = `
+                <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                <span class="text-gray-700">Ready to record</span>
+            `;
+            
+            // Clear IMU status list
+            document.getElementById('imuStatus').innerHTML = '';
+            
+            // Reset recording time display
+            document.getElementById('recordingTime').textContent = '00:00';
+            
+            // Reset buttons
+            document.getElementById('startRecording').disabled = false;
+            document.getElementById('stopRecording').disabled = true;
+            
+            // Close existing WebSocket connection
+            if (ws) {
+                ws.close();
+            }
+            
+            console.log("New session setup completed");
+        });
+
+        // Initialize the page
+        loadIMUConfigs();
+    </script>
+</body>
+</html>
